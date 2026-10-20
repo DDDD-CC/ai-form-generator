@@ -1,0 +1,34 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# 调试产物：API 响应落盘文件，可能含对话内容与 Token 用量，不入库
+resp.json
+debug-output/
+
+# AI 助手记忆目录：含个人地理位置、求职目标与技术背景评估，不入库
+.workbuddy/
+
+# 开发日志与逐日规划：对内学习素材，含面试准备内容（面试可讲性/面试叙事等），不入库
+docs/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
