@@ -4,16 +4,16 @@
         <div class="tip">支持回车发送</div>
     </div>
     <div class="message-box" v-else ref="boxRef">
-        <ChatBubble class="message-item" 
+        <MessageItem class="message-item" 
             v-for="msg in messageList" 
             :key="msg.id" 
             :message="msg" 
-            @deleteMessage="deleteMessage(msg.id)" 
+            @delete-message="deleteMessage(msg.id)" 
         />
     </div>
 </template>
 <script setup lang="ts">
-import ChatBubble from './MessageItem.vue';
+import MessageItem from './MessageItem.vue';
 import type { ChatMessage } from '@/types/Message'
 import { nextTick, ref, watch } from 'vue';
 
@@ -22,11 +22,11 @@ const { messageList = [] } = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    deleteMessage: [id: number]
+    'delete-message': [id: number]
 }>()
 
 const deleteMessage = (id: number):void => {
-    emit('deleteMessage', id)    
+    emit('delete-message', id)
 }
 
 const boxRef = ref<HTMLDivElement>()

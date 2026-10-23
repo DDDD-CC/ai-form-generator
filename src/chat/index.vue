@@ -6,7 +6,7 @@
             :total-count="totalCount"
             :last-message-at="lastMessageAt" 
         />
-        <MessageList :message-list="messageList" @deleteMessage="deleteMessage" />
+        <MessageList :message-list="messageList" @delete-message="deleteMessage" />
         <ChatInput @send="handleSend" />
     </div>
 </template>
@@ -18,8 +18,10 @@ import ChatInput from './components/ChatInput.vue';
 import ChatHeader from './components/ChatHeader.vue';
 import type { ChatMessage } from '@/types/Message';
 import { useModel } from '@/composables/useModel';
+import { sendChat } from '@/api/chat';
+import { apiMessages } from '@/api/messageMap';
 
-const { currentModel } = useModel()
+const { currentModel, currentModelId } = useModel()
 let idSeed = 0
 const messageList = ref<ChatMessage[]>([])
 
@@ -27,21 +29,32 @@ const lastMessageAt = computed(() => {
     return messageList.value.filter(item => item.role === 'user').at(-1)?.createdAt
 })
 
-function handleSend(text: string):void {
-    messageList.value.push(
-        {
+async function handleSend(text: string):Promise<void> {
+    messageList.value.push({
+        id: ++idSeed,          // 简易自增 id，够学习用
+        content: text,
+        role: 'user',
+        createdAt: Date.now(),
+        isError: false
+    })
+    try {
+        const message = await sendChat(currentModelId.value, apiMessages(messageList.value))
+        messageList.value.push({
             id: ++idSeed,          // 简易自增 id，够学习用
-            content: text,
-            role: 'user',
-            createdAt: Date.now()
-        },
-        {
-            id: ++idSeed,          // 简易自增 id，够学习用
-            content: `【模拟回复】我收到了：${text}`,
+            content: message.content,
             role: 'assistant',
-            createdAt: Date.now()
-        }
-    )
+            createdAt: Date.now(),
+            isError: false
+        })
+    } catch (err) {
+        messageList.value.push({
+            id: ++idSeed,
+            content: `【请求失败】${err instanceof Error ? err.message : String(err)}`,
+            role: 'assistant',
+            createdAt: Date.now(),
+            isError: true
+        })
+    }
 }
 
 const totalCount = computed(() => messageList.value.length)
