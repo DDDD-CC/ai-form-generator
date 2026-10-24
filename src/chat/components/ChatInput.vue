@@ -24,6 +24,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+const props = defineProps<{
+    loading: boolean
+}>()
+
 const draft = ref('')
 const textareaRef = ref<HTMLTextAreaElement>()
 
@@ -39,7 +43,7 @@ function autoResize():void {
     el.style.height = el.scrollHeight + 'px'
 }
 
-const canSend = computed(() => draft.value.trim().length > 0)
+const canSend = computed(() => draft.value.trim().length > 0 && !props.loading)
 
 const send = ():void => {
     if (!canSend.value) return

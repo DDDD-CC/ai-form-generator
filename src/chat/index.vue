@@ -6,8 +6,8 @@
             :total-count="totalCount"
             :last-message-at="lastMessageAt" 
         />
-        <MessageList :message-list="messageList" @delete-message="deleteMessage" />
-        <ChatInput @send="handleSend" />
+        <MessageList :message-list="messageList" @delete-message="deleteMessage" :loading="loading" />
+        <ChatInput @send="handleSend" :loading="loading" />
     </div>
 </template>
 
@@ -29,7 +29,10 @@ const lastMessageAt = computed(() => {
     return messageList.value.filter(item => item.role === 'user').at(-1)?.createdAt
 })
 
+const loading = ref(false)
+
 async function handleSend(text: string):Promise<void> {
+    if(loading.value) return
     messageList.value.push({
         id: ++idSeed,          // 简易自增 id，够学习用
         content: text,
@@ -38,6 +41,7 @@ async function handleSend(text: string):Promise<void> {
         isError: false
     })
     try {
+        loading.value = true
         const message = await sendChat(currentModelId.value, apiMessages(messageList.value))
         messageList.value.push({
             id: ++idSeed,          // 简易自增 id，够学习用
@@ -54,6 +58,8 @@ async function handleSend(text: string):Promise<void> {
             createdAt: Date.now(),
             isError: true
         })
+    } finally {
+        loading.value = false
     }
 }
 

@@ -10,6 +10,9 @@
             :message="msg" 
             @delete-message="deleteMessage(msg.id)" 
         />
+        <div v-if="loading" class="thinking-row">
+            <div class="thinking-bubble">思考中…</div>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -17,8 +20,9 @@ import MessageItem from './MessageItem.vue';
 import type { ChatMessage } from '@/types/Message'
 import { nextTick, ref, watch } from 'vue';
 
-const { messageList = [] } = defineProps<{
+const { messageList = [], loading } = defineProps<{
     messageList?: ChatMessage[]
+    loading: boolean
 }>()
 
 const emit = defineEmits<{
@@ -61,4 +65,35 @@ watch(() => messageList.length, (newVal, oldVal) => {
     align-items: center;
 }
 
+/* 思考中占位：视觉上复刻 AI 气泡（左侧、灰色、同圆角），但无删除按钮 */
+.thinking-row {
+    display: flex;
+    padding: 8px 20px;
+}
+
+.thinking-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border-bottom-left-radius: 4px;
+    background-color: #f2f3f5;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+    animation: thinking-pulse 1.6s ease-in-out infinite;
+
+    /* 用户系统开了"减少动态效果"时停用动画 */
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+@keyframes thinking-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+}
 </style>
