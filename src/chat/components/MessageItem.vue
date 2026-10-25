@@ -7,7 +7,6 @@
                 v-if="message.isError && canRetry"
                 class="retry-btn"
                 aria-label="重试这次请求"
-                :disabled="canRetry"
                 @click="retry"
             >
                 <svg
