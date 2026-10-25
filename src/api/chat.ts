@@ -44,9 +44,10 @@ export async function sendChat(model: ModelId, messages: ApiMessage[], type: Thi
 
     /**
      * 非流式请求超时阈值。
-     * 依据（记录 31 实测）：TTFB 基线 43.83s × 免费档吞吐波动 ~4 倍 ≈ 上限 175s；
-     * 取 120s 是"覆盖慢请求"与"干等体验"的折中（超过 2 分钟的死请求不值得等）。
-     * ⚠️ 第 15 天流式上线后首字节等待大幅缩短，此阈值需重新评估。
+     * 依据：非流式响应的 TTFB 实测约 44s，且上游吞吐存在数倍波动，
+     * 最慢情形可达约 175s；取 120s 是"覆盖慢请求"与"干等体验"的折中
+     * （超过 2 分钟的死请求不值得继续等）。
+     * 注：改为流式后首字节等待会大幅缩短，届时需按新路径重新评估此值。
      */
     const REQUEST_TIMEOUT_MS = 120_000
     const signalTimer = setTimeout(() => {

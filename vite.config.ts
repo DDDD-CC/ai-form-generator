@@ -14,11 +14,6 @@ export default defineConfig({
       '/api': {
         target: 'https://open.bigmodel.cn',
         changeOrigin: true,
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            console.log(`[proxy] ${req.method} ${req.url}  ->  ${options.target}${proxyReq.path}`)
-          })
-        }
       }
     }
   }
