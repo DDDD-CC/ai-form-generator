@@ -3,6 +3,7 @@ import type { ModelId } from "@/config/models"
 import { API_BASE } from "@/config/api"
 import type { ApiMessage, SendChatResult } from "./message"
 import type { Usage } from "./usage"
+import { ChatError } from "./error"
 
 /**
  * 智谱 /chat/completions 响应的整体结构（边界契约）。
@@ -39,6 +40,19 @@ export async function sendChat(model: ModelId, messages: ApiMessage[], type: Thi
     const key = import.meta.env.VITE_ZHIPU_KEY
     if (!key) throw new Error('key不存在，未配置 VITE_ZHIPU_KEY，请检查 .env.local')
 
+    const controller = new AbortController()
+
+    /**
+     * 非流式请求超时阈值。
+     * 依据（记录 31 实测）：TTFB 基线 43.83s × 免费档吞吐波动 ~4 倍 ≈ 上限 175s；
+     * 取 120s 是"覆盖慢请求"与"干等体验"的折中（超过 2 分钟的死请求不值得等）。
+     * ⚠️ 第 15 天流式上线后首字节等待大幅缩短，此阈值需重新评估。
+     */
+    const REQUEST_TIMEOUT_MS = 120_000
+    const signalTimer = setTimeout(() => {
+        controller.abort()
+    }, REQUEST_TIMEOUT_MS)
+
     const payload = {
         model,
         messages,
@@ -48,6 +62,7 @@ export async function sendChat(model: ModelId, messages: ApiMessage[], type: Thi
     }
 
     let res: Response
+
     try {
         res = await fetch(`${API_BASE}/chat/completions`, {
             method: 'POST',
@@ -56,9 +71,17 @@ export async function sendChat(model: ModelId, messages: ApiMessage[], type: Thi
                 Authorization: `Bearer ${key}`,
             },
             body: JSON.stringify(payload),
+            signal: controller.signal
         })
     } catch (err) {
-        throw new Error(`请检查断网/代理未启动/跨域，${err instanceof Error ? err.message : String(err)}`)
+        if(err instanceof Error){ 
+            if(err.name === 'AbortError') throw new ChatError('timeout', '请求超时')
+            throw new ChatError('network', '请检查断网/代理未启动/跨域')
+        } else {
+            throw new ChatError('network', String(err))
+        }
+    } finally {
+        clearTimeout(signalTimer)
     }
 
     const rawText = await res.text()
@@ -70,7 +93,14 @@ export async function sendChat(model: ModelId, messages: ApiMessage[], type: Thi
     }
 
     if (!res.ok) {
-        throw new Error(`请求失败：${res.status} ${rawText}`)
+       
+        if(res.status === 401) {
+            throw new ChatError('auth', `${res.status} ${rawText}`)
+        } else if(res.status === 429) {
+            throw new ChatError('rate-limit', `${res.status} ${rawText}`)
+        } else {
+            throw new ChatError('server', `${res.status} ${rawText}`)
+        }
     }
 
     const message = data?.choices[0]?.message

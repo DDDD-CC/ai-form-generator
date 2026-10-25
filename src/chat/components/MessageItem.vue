@@ -2,6 +2,24 @@
     <div class="bubble-row" :class="message.role">
         <div class="bubble-group">
             <div class="bubble">{{ message.content }}</div>
+            <!-- 重试：仅"父层判定可重试"的失败气泡显示；本组件只上报事件，重试逻辑在 index.vue -->
+            <button
+                v-if="message.isError && canRetry"
+                class="retry-btn"
+                aria-label="重试这次请求"
+                :disabled="canRetry"
+                @click="retry"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <polyline points="1 4 1 10 7 10"/>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+            </button>
             <button class="delete-btn" aria-label="删除这条信息" @click="deleteMessage">
                 <svg
                     viewBox="0 0 24 24" 
@@ -23,16 +41,23 @@
 <script setup lang="ts">
 import type { ChatMessage } from '@/types/Message'
 
-const { message } = defineProps<{
+const { message, canRetry = false } = defineProps<{
     message: ChatMessage
+    /** 是否显示重试按钮：由父层判断（仅最后一条失败气泡），本组件不做判断逻辑 */
+    canRetry?: boolean
 }>()
 
 const emit = defineEmits<{
     deleteMessage: []
+    retry: []
 }>()
 
 const deleteMessage = ():void => {
     emit('deleteMessage')    
+}
+
+const retry = ():void => {
+    emit('retry')    
 }
 </script>
 
@@ -106,6 +131,34 @@ const deleteMessage = ():void => {
         &:focus-visible { 
             opacity: 1 
         }
+    }
+
+    /* 重试按钮：只出现在失败气泡上，常显（行动入口，不走删除按钮的 hover 隐藏逻辑） */
+    .retry-btn {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: #d97706;
+        cursor: pointer;
+        transition:
+            background-color .15s,
+            color .15s,
+            transform .15s;
+
+        svg { width: 15px; height: 15px; }
+
+        &:hover {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        &:active { transform: scale(.9); }
     }
 
     /* 用户消息：按钮在气泡左侧，隐藏时向右缩进 */

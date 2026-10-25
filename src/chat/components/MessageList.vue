@@ -8,7 +8,9 @@
             v-for="msg in messageList" 
             :key="msg.id" 
             :message="msg" 
+            :can-retry="msg.isError && msg.id === messageList.at(-1)?.id"
             @delete-message="deleteMessage(msg.id)" 
+            @retry="retry(msg.id)"
         />
         <div v-if="loading" class="thinking-row">
             <div class="thinking-bubble">思考中…</div>
@@ -27,10 +29,15 @@ const { messageList = [], loading } = defineProps<{
 
 const emit = defineEmits<{
     'delete-message': [id: number]
+    retry: [id: number]
 }>()
 
 const deleteMessage = (id: number):void => {
     emit('delete-message', id)
+}
+
+const retry = (id: number):void => {
+    emit('retry', id)    
 }
 
 const boxRef = ref<HTMLDivElement>()
